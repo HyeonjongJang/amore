@@ -1,4 +1,4 @@
-l"""
+"""
 Persona Compatibility Helper
 Provides backward compatibility between Legacy (P001-P007) and Kadence (K001-K008) persona formats.
 
