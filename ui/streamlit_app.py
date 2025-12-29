@@ -14,6 +14,38 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from main import CRMMessageGenerator
 from config import PERSONAS_PATH, BRAND_TONES_PATH
 
+# Import persona compatibility helper
+try:
+    from utils.persona_compat import get_age_group, get_gender, get_skin_type
+    COMPAT_AVAILABLE = True
+except ImportError:
+    COMPAT_AVAILABLE = False
+
+def _get_persona_age(persona):
+    """Get age_group from persona (supports both formats)"""
+    if COMPAT_AVAILABLE:
+        return get_age_group(persona)
+    return persona.get('age_group') or persona.get('demographics', {}).get('age_group', 'N/A')
+
+def _get_persona_gender(persona):
+    """Get gender from persona (supports both formats)"""
+    if COMPAT_AVAILABLE:
+        return get_gender(persona)
+    return persona.get('gender') or persona.get('demographics', {}).get('gender', 'N/A')
+
+def _get_persona_skin_type(persona):
+    """Get skin_type from persona (supports both formats)"""
+    if COMPAT_AVAILABLE:
+        return get_skin_type(persona)
+    return persona.get('skin_type') or persona.get('demographics', {}).get('skin_type', 'N/A')
+
+def _get_comm_style(persona):
+    """Get communication style (dict or string)"""
+    cs = persona.get('communication_style', 'N/A')
+    if isinstance(cs, dict):
+        return cs.get('tone', 'N/A')
+    return cs
+
 # Page configuration
 st.set_page_config(
     page_title="CRM 메시지 자동 생성 시스템",
@@ -151,7 +183,7 @@ def main():
 
         # Persona selection
         st.subheader("1. 타겟 페르소나")
-        persona_options = {f"{p['name']} ({p['age_group']})": p for p in personas}
+        persona_options = {f"{p['name']} ({_get_persona_age(p)})": p for p in personas}
         selected_persona_key = st.selectbox(
             "페르소나 선택",
             options=list(persona_options.keys()),
@@ -162,15 +194,15 @@ def main():
         # Show persona details
         with st.expander("📋 페르소나 상세 정보", expanded=False):
             st.markdown(f"**이름**: {selected_persona['name']}")
-            st.markdown(f"**연령대**: {selected_persona['age_group']}")
-            st.markdown(f"**성별**: {selected_persona['gender']}")
-            st.markdown(f"**피부타입**: {selected_persona['skin_type']}")
-            st.markdown(f"**피부고민**: {', '.join(selected_persona['skin_concerns'])}")
-            st.markdown(f"**라이프스타일**: {selected_persona['lifestyle']}")
-            st.markdown(f"**선호 브랜드**: {', '.join(selected_persona['preferred_brands'])}")
-            st.markdown(f"**가격민감도**: {selected_persona['price_sensitivity']}")
-            st.markdown(f"**구매트리거**: {', '.join(selected_persona['purchase_triggers'])}")
-            st.markdown(f"**커뮤니케이션**: {selected_persona['communication_style']}")
+            st.markdown(f"**연령대**: {_get_persona_age(selected_persona)}")
+            st.markdown(f"**성별**: {_get_persona_gender(selected_persona)}")
+            st.markdown(f"**피부타입**: {_get_persona_skin_type(selected_persona)}")
+            st.markdown(f"**피부고민**: {', '.join(selected_persona.get('skin_concerns', []))}")
+            st.markdown(f"**라이프스타일**: {selected_persona.get('lifestyle', 'N/A')}")
+            st.markdown(f"**선호 브랜드**: {', '.join(selected_persona.get('preferred_brands', []))}")
+            st.markdown(f"**가격민감도**: {selected_persona.get('price_sensitivity', 'N/A')}")
+            st.markdown(f"**구매트리거**: {', '.join(selected_persona.get('purchase_triggers', []))}")
+            st.markdown(f"**커뮤니케이션**: {_get_comm_style(selected_persona)}")
 
         st.divider()
 
