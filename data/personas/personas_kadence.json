@@ -1,11 +1,8 @@
-/*
-Personas based on Kadence eight core consumer segments
-Reference: https://kadence.com/knowledge/the-faces-of-beauty-eight-core-consumer-segments-in-the-beauty-industry/
-*/
 {
   "version": "2.0",
   "description": "Kadence 8 Segments based personas for Amorepacific CRM message generation",
   "source": "Kadence Consumer Segmentation Framework",
+  "url": "https://kadence.com/knowledge/the-faces-of-beauty-eight-core-consumer-segments-in-the-beauty-industry",
   "personas": [
     {
       "id": "K001",
