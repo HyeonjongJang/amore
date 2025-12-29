@@ -1,6 +1,7 @@
 """
 Persona Analyzer Agent
 Analyzes customer persona to extract purchase motivations and communication insights
+Supports both Legacy (P001-P007) and Kadence (K001-K008) persona formats.
 """
 import json
 from typing import Dict, Any, Optional
@@ -9,6 +10,15 @@ import sys
 
 sys.path.append(str(Path(__file__).parent.parent))
 from config import OPENAI_API_KEY, LLM_MODEL
+
+try:
+    from utils.persona_compat import (
+        get_age_group, get_gender, get_skin_type,
+        is_kadence_persona, get_segment_id, build_persona_summary
+    )
+    COMPAT_AVAILABLE = True
+except ImportError:
+    COMPAT_AVAILABLE = False
 
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
@@ -124,13 +134,31 @@ class PersonaAnalyzerAgent:
         return analysis
 
     def _format_persona(self, persona: Dict[str, Any]) -> str:
-        """Format persona dictionary into readable text"""
+        """Format persona dictionary into readable text (supports both Legacy and Kadence formats)"""
         lines = []
 
-        lines.append(f"이름: {persona.get('name', 'N/A')}")
-        lines.append(f"연령대: {persona.get('age_group', 'N/A')}")
-        lines.append(f"성별: {persona.get('gender', 'N/A')}")
-        lines.append(f"피부타입: {persona.get('skin_type', 'N/A')}")
+        # Use compatibility helper if available
+        if COMPAT_AVAILABLE:
+            lines.append(f"이름: {persona.get('name', 'N/A')}")
+            lines.append(f"연령대: {get_age_group(persona)}")
+            lines.append(f"성별: {get_gender(persona)}")
+            lines.append(f"피부타입: {get_skin_type(persona)}")
+
+            # Kadence-specific fields
+            if is_kadence_persona(persona):
+                segment_id = get_segment_id(persona)
+                if segment_id:
+                    lines.append(f"세그먼트: {segment_id}")
+                segment_size = persona.get('segment_size', {})
+                if segment_size:
+                    lines.append(f"세그먼트 비율: {segment_size.get('percentage', 0)}%")
+        else:
+            # Fallback: try both direct and demographics access
+            lines.append(f"이름: {persona.get('name', 'N/A')}")
+            demographics = persona.get('demographics', {})
+            lines.append(f"연령대: {persona.get('age_group') or demographics.get('age_group', 'N/A')}")
+            lines.append(f"성별: {persona.get('gender') or demographics.get('gender', 'N/A')}")
+            lines.append(f"피부타입: {persona.get('skin_type') or demographics.get('skin_type', 'N/A')}")
 
         if persona.get('skin_concerns'):
             lines.append(f"피부고민: {', '.join(persona['skin_concerns'])}")
@@ -139,15 +167,35 @@ class PersonaAnalyzerAgent:
 
         if persona.get('shopping_pattern'):
             sp = persona['shopping_pattern']
-            lines.append(f"쇼핑패턴: {sp.get('frequency', '')}, 평균구매 {sp.get('avg_purchase', '')}")
-            lines.append(f"선호시간: {sp.get('preferred_time', '')}, 채널: {sp.get('channel', '')}")
+            if isinstance(sp, dict):
+                lines.append(f"쇼핑패턴: {sp.get('frequency', '')}, 평균구매 {sp.get('avg_purchase', '')}")
+                lines.append(f"선호시간: {sp.get('preferred_time', '')}, 채널: {sp.get('channel', '')}")
+                # Kadence additional fields
+                if sp.get('behavior'):
+                    lines.append(f"쇼핑행동: {sp['behavior']}")
+            else:
+                lines.append(f"쇼핑패턴: {sp}")
 
         if persona.get('preferred_brands'):
             lines.append(f"선호브랜드: {', '.join(persona['preferred_brands'])}")
 
+        # Kadence: preferred_products
+        if persona.get('preferred_products'):
+            lines.append(f"선호제품: {', '.join(persona['preferred_products'])}")
+
         lines.append(f"가격민감도: {persona.get('price_sensitivity', 'N/A')}")
         lines.append(f"프로모션반응: {persona.get('promotion_response', 'N/A')}")
-        lines.append(f"커뮤니케이션스타일: {persona.get('communication_style', 'N/A')}")
+
+        # communication_style can be dict (Kadence) or string (Legacy)
+        comm_style = persona.get('communication_style', 'N/A')
+        if isinstance(comm_style, dict):
+            lines.append(f"커뮤니케이션 톤: {comm_style.get('tone', 'N/A')}")
+            if comm_style.get('do'):
+                lines.append(f"DO: {', '.join(comm_style['do'][:3])}")
+            if comm_style.get('dont'):
+                lines.append(f"DON'T: {', '.join(comm_style['dont'][:3])}")
+        else:
+            lines.append(f"커뮤니케이션스타일: {comm_style}")
 
         if persona.get('purchase_triggers'):
             lines.append(f"구매트리거: {', '.join(persona['purchase_triggers'])}")
@@ -157,6 +205,19 @@ class PersonaAnalyzerAgent:
 
         if persona.get('values'):
             lines.append(f"가치관: {', '.join(persona['values'])}")
+
+        # Kadence: message_keywords
+        if persona.get('message_keywords'):
+            mk = persona['message_keywords']
+            if isinstance(mk, dict):
+                if mk.get('primary'):
+                    lines.append(f"핵심키워드: {', '.join(mk['primary'])}")
+                if mk.get('avoid'):
+                    lines.append(f"회피키워드: {', '.join(mk['avoid'])}")
+
+        # Kadence: sample_message
+        if persona.get('sample_message'):
+            lines.append(f"샘플메시지: {persona['sample_message']}")
 
         return "\n".join(lines)
 
