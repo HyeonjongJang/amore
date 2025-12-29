@@ -1,4 +1,4 @@
-"""
+l"""
 Persona Compatibility Helper
 Provides backward compatibility between Legacy (P001-P007) and Kadence (K001-K008) persona formats.
 
@@ -166,51 +166,3 @@ def build_persona_summary(persona: Dict[str, Any]) -> str:
         lines.append(f"커뮤니케이션 스타일: {comm_style}")
 
     return '\n'.join(lines)
-
-
-# For testing
-if __name__ == "__main__":
-    import json
-    from pathlib import Path
-
-    # Test with both persona files
-    base_path = Path(__file__).parent.parent / "data" / "personas"
-
-    # Legacy
-    with open(base_path / "personas.json", 'r') as f:
-        legacy = json.load(f)
-
-    # Kadence
-    with open(base_path / "personas_kadence_enriched.json", 'r') as f:
-        kadence = json.load(f)
-
-    print("=" * 60)
-    print("Testing Legacy Persona (P001)")
-    print("=" * 60)
-    p = legacy['personas'][0]
-    print(f"ID: {p['id']}")
-    print(f"is_kadence: {is_kadence_persona(p)}")
-    print(f"age_group: {get_age_group(p)}")
-    print(f"skin_type: {get_skin_type(p)}")
-    print(f"gender: {get_gender(p)}")
-    print()
-
-    print("=" * 60)
-    print("Testing Kadence Persona (K001)")
-    print("=" * 60)
-    k = kadence['personas'][0]
-    print(f"ID: {k['id']}")
-    print(f"is_kadence: {is_kadence_persona(k)}")
-    print(f"age_group: {get_age_group(k)}")
-    print(f"skin_type: {get_skin_type(k)}")
-    print(f"gender: {get_gender(k)}")
-    print(f"segment_id: {get_segment_id(k)}")
-    print()
-
-    print("=" * 60)
-    print("Normalized Kadence Persona")
-    print("=" * 60)
-    normalized = normalize_persona(k)
-    print(f"Top-level age_group: {normalized.get('age_group')}")
-    print(f"Top-level skin_type: {normalized.get('skin_type')}")
-    print(f"Top-level gender: {normalized.get('gender')}")
