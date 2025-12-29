@@ -10,7 +10,7 @@ from openai import OpenAI
 
 load_dotenv()
 
- 
+
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
@@ -333,8 +333,8 @@ class ReviewSegmenter:
 def main():
     segmenter = ReviewSegmenter()
  
-    reviews_path = "/home/kue0806/cosmetic-agent-py/data/crawled/amoremall_all_reviews.json"
-    output_dir = "/home/kue0806/cosmetic-agent-py/data/segmented"
+    reviews_path = ""
+    output_dir = ""
 
     segmented_reviews, analysis = segmenter.run(reviews_path, output_dir)
  
