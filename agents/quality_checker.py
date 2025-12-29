@@ -1,6 +1,7 @@
 """
 Quality Checker Agent
 Validates generated CRM messages and predicts performance
+Supports both Legacy (P001-P007) and Kadence (K001-K008) persona formats.
 """
 import json
 from typing import Dict, Any, Optional
@@ -9,6 +10,13 @@ import sys
 
 sys.path.append(str(Path(__file__).parent.parent))
 from config import OPENAI_API_KEY, LLM_MODEL, BRAND_TONES_PATH
+
+# Import persona compatibility helper
+try:
+    from utils.persona_compat import get_age_group, get_skin_type
+    COMPAT_AVAILABLE = True
+except ImportError:
+    COMPAT_AVAILABLE = False
 
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
@@ -339,12 +347,26 @@ class QualityCheckerAgent:
         return "\n".join(lines)
 
     def _format_persona(self, persona: Dict[str, Any]) -> str:
-        """Format persona for prompt"""
+        """Format persona for prompt (supports both Legacy and Kadence formats)"""
         lines = []
         lines.append(f"이름: {persona.get('name', 'N/A')}")
-        lines.append(f"연령대: {persona.get('age_group', 'N/A')}")
-        lines.append(f"피부타입: {persona.get('skin_type', 'N/A')}")
-        lines.append(f"커뮤니케이션 스타일: {persona.get('communication_style', 'N/A')}")
+
+        # Use compatibility helper if available
+        if COMPAT_AVAILABLE:
+            lines.append(f"연령대: {get_age_group(persona)}")
+            lines.append(f"피부타입: {get_skin_type(persona)}")
+        else:
+            # Fallback: try direct access and demographics
+            demographics = persona.get('demographics', {})
+            lines.append(f"연령대: {persona.get('age_group') or demographics.get('age_group', 'N/A')}")
+            lines.append(f"피부타입: {persona.get('skin_type') or demographics.get('skin_type', 'N/A')}")
+
+        # communication_style can be dict (Kadence) or string (Legacy)
+        comm_style = persona.get('communication_style', 'N/A')
+        if isinstance(comm_style, dict):
+            lines.append(f"커뮤니케이션 톤: {comm_style.get('tone', 'N/A')}")
+        else:
+            lines.append(f"커뮤니케이션 스타일: {comm_style}")
 
         if persona.get('purchase_triggers'):
             lines.append(f"구매 트리거: {', '.join(persona['purchase_triggers'])}")
