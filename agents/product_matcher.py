@@ -1,6 +1,7 @@
 """
 Product Matcher Agent
 Uses RAG to find and recommend products matching persona and campaign
+Supports both Legacy (P001-P007) and Kadence (K001-K008) persona formats.
 """
 import json
 from typing import Dict, Any, List, Optional
@@ -10,6 +11,13 @@ import sys
 sys.path.append(str(Path(__file__).parent.parent))
 sys.path.append(str(Path(__file__).parent.parent / "rag"))
 from config import OPENAI_API_KEY, LLM_MODEL
+
+# Import persona compatibility helper
+try:
+    from utils.persona_compat import get_skin_type
+    COMPAT_AVAILABLE = True
+except ImportError:
+    COMPAT_AVAILABLE = False
 
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
@@ -262,9 +270,16 @@ RAG로 검색된 제품들 중에서 페르소나와 캠페인에 가장 적합�
         if persona.get('skin_concerns'):
             query_parts.append(f"skin concerns: {', '.join(persona['skin_concerns'])}")
 
-        # Add skin type
-        if persona.get('skin_type'):
-            query_parts.append(f"skin type: {persona['skin_type']}")
+        # Add skin type (supports both Legacy and Kadence formats)
+        if COMPAT_AVAILABLE:
+            skin_type = get_skin_type(persona)
+            if skin_type and skin_type != 'N/A':
+                query_parts.append(f"skin type: {skin_type}")
+        else:
+            # Fallback: try direct access and demographics
+            skin_type = persona.get('skin_type') or persona.get('demographics', {}).get('skin_type')
+            if skin_type:
+                query_parts.append(f"skin type: {skin_type}")
 
         # Add campaign purpose keywords
         campaign_keywords = {
