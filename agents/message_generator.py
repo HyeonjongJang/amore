@@ -1,6 +1,11 @@
 """
 Message Generator Agent
 Generates personalized CRM messages with brand-specific tone and manner
+
+Enhanced with:
+- Persuasion Principles (Authority 63%, Consensus 62.5%, Cognition 56.5%, Scarcity 54.5%)
+- Big Five Personality Mapping for Personas
+- Reference: arXiv:2512.03373 "LLM-Generated Ads: From Personalization to Persuasion"
 """
 import json
 from typing import Dict, Any, Optional
@@ -9,6 +14,17 @@ import sys
 
 sys.path.append(str(Path(__file__).parent.parent))
 from config import OPENAI_API_KEY, LLM_MODEL, BRAND_TONES_PATH
+
+# Import persuasion principles module
+try:
+    from utils.persuasion_principles import (
+        build_persuasion_prompt_section,
+        get_persona_personality,
+        get_persuasion_triggers
+    )
+    PERSUASION_ENABLED = True
+except ImportError:
+    PERSUASION_ENABLED = False
 
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
@@ -62,6 +78,16 @@ class MessageGeneratorAgent:
 - 긴급성 또는 특별함 강조
 - 자연스러운 행동 유도
 
+## 🎯 설득 원칙 (Persuasion Principles) 적용 가이드
+연구에 따르면 다음 원칙을 적용하면 설득력이 15-20% 향상됩니다:
+
+1. **권위 (Authority)** - 전문가 추천, 임상 테스트, 특허 성분 언급
+2. **사회적 증거 (Social Proof)** - 누적 판매량, 리뷰 평점, 재구매율
+3. **희소성 (Scarcity)** - 한정 수량, 기간 한정, VIP 전용
+4. **인지적 설득 (Cognition)** - 성분 효능, 과학적 근거 설명
+
+각 페르소나에 맞는 설득 원칙이 별도로 제공됩니다.
+
 ## 중요: 각 제품별로 메시지 생성
 - 추천 제품이 여러 개인 경우, 각 제품마다 별도의 메시지 세트를 작성해주세요.
 - 각 제품에 대해 메인 메시지 1개 + 대안 메시지 2개를 작성합니다.
@@ -114,11 +140,14 @@ class MessageGeneratorAgent:
 - 캠페인 목적: {campaign_purpose}
 - 시즌/이벤트: {season_event}
 
+{persuasion_section}
+
 ## 참고할 성공 CRM 메시지 예시
 {crm_examples}
 
 ---
 위 정보를 바탕으로 **각 추천 제품별로** 이 고객의 마음을 움직일 수 있는 CRM 메시지를 작성해주세요.
+설득 원칙을 자연스럽게 녹여서 작성하되, 강제로 모든 표현을 사용할 필요는 없습니다.
 각 제품당 메인 메시지 1개 + 대안 메시지 2개를 작성합니다.
 제목은 반드시 40자 이내, 본문은 350자 이내로 작성하세요.
 """)
@@ -156,6 +185,17 @@ class MessageGeneratorAgent:
         # Format product info
         product_text = self._format_product_info(product_match)
 
+        # Build persuasion principles section (NEW)
+        persuasion_section = ""
+        if PERSUASION_ENABLED:
+            persona_id = persona.get('id', '')
+            persuasion_section = build_persuasion_prompt_section(
+                persona_id=persona_id,
+                brand=brand,
+                campaign_purpose=campaign_purpose,
+                season_event=season_event
+            )
+
         # Create chain
         chain = self.prompt | self.llm
 
@@ -169,6 +209,7 @@ class MessageGeneratorAgent:
             "brand_tone": brand_tone_text,
             "campaign_purpose": campaign_purpose,
             "season_event": season_event or "일반",
+            "persuasion_section": persuasion_section,
             "crm_examples": crm_examples or "없음"
         })
 
