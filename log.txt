@@ -1,20 +1,16 @@
-Creating new CRMMessageGenerator instance...
-Loading existing vector store from /root/amore/agent10_crm/rag/chroma_db...
-Loaded vector store with 3096 documents
-[DEBUG] Product match result: 3 products
-[DEBUG] Total retrieved: 7
-2025-12-30 12:59:53.419 Please replace `use_container_width` with `width`.
-
-`use_container_width` will be removed after 2025-12-31.
-
-For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
-2025-12-30 12:59:53.462 Please replace `use_container_width` with `width`.
-
-`use_container_width` will be removed after 2025-12-31.
-
-For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
-2025-12-30 12:59:53.463 Please replace `use_container_width` with `width`.
-
-`use_container_width` will be removed after 2025-12-31.
-
-For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.
+ModuleNotFoundError: This app has encountered an error. The original error message is redacted to prevent data leaks. Full error details have been recorded in the logs (if you're on Streamlit Cloud, click on 'Manage app' in the lower right of your app).
+Traceback:
+File "/mount/src/amore/ui/streamlit_app.py", line 14, in <module>
+    from main import CRMMessageGenerator
+File "/mount/src/amore/./main.py", line 15, in <module>
+    from agents.persona_analyzer import PersonaAnalyzerAgent
+File "/mount/src/amore/./agents/__init__.py", line 5, in <module>
+    from .product_matcher import ProductMatcherAgent
+File "/mount/src/amore/./agents/product_matcher.py", line 29, in <module>
+    from retriever import ProductRetriever
+File "/mount/src/amore/rag/retriever.py", line 16, in <module>
+    from vector_store import ProductVectorStore
+File "/mount/src/amore/rag/vector_store.py", line 28, in <module>
+    raise e
+File "/mount/src/amore/rag/vector_store.py", line 22, in <module>
+    from langchain_chroma import Chroma
