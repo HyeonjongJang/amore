@@ -3,7 +3,7 @@ CRM Message Generation System - Main Entry Point
 Multi-Agent workflow using LangGraph
 """
 import json
-from typing import Dict, Any, Optional, TypedDict, Annotated
+from typing import Dict, Any, Optional, TypedDict, Annotated, Union
 from pathlib import Path
 import sys
 
@@ -300,7 +300,7 @@ class CRMMessageGenerator:
 
     def generate(
         self,
-        persona_id_or_name: str,
+        persona_id_or_name: Union[str, Dict[str, Any]],
         brand: str,
         campaign_purpose: str,
         season_event: str = "일반"
@@ -309,7 +309,8 @@ class CRMMessageGenerator:
         Generate CRM message for a persona
 
         Args:
-            persona_id_or_name: Persona ID (e.g., "P001") or name (e.g., "트렌드세터 지영")
+            persona_id_or_name: Persona ID (e.g., "P001"), name (e.g., "트렌드세터 지영"),
+                               or a complete persona dictionary (for custom personas)
             brand: Brand name (Korean, e.g., "헤라")
             campaign_purpose: Campaign purpose
             season_event: Season or event context
@@ -317,10 +318,15 @@ class CRMMessageGenerator:
         Returns:
             Final output containing messages, quality report, etc.
         """
-        # Get persona
-        persona = self.get_persona(persona_id_or_name)
-        if not persona:
-            return {"error": f"Persona not found: {persona_id_or_name}"}
+        # Get persona - handle both string lookup and direct persona dict
+        if isinstance(persona_id_or_name, dict):
+            # Direct persona dictionary (custom persona)
+            persona = persona_id_or_name
+        else:
+            # Lookup by ID or name
+            persona = self.get_persona(persona_id_or_name)
+            if not persona:
+                return {"error": f"Persona not found: {persona_id_or_name}"}
 
         # Initialize state
         initial_state: CRMState = {

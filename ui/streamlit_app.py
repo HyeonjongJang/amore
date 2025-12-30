@@ -21,6 +21,17 @@ try:
 except ImportError:
     COMPAT_AVAILABLE = False
 
+# Import custom persona builder
+try:
+    from utils.custom_persona_builder import (
+        AGE_GROUPS, GENDERS, SKIN_TYPES, SKIN_CONCERNS, PRICE_SENSITIVITIES,
+        get_segment_options, get_segment_insights, build_custom_persona,
+        get_persona_preview
+    )
+    CUSTOM_PERSONA_AVAILABLE = True
+except ImportError:
+    CUSTOM_PERSONA_AVAILABLE = False
+
 def _get_persona_age(persona):
     """Get age_group from persona (supports both formats)"""
     if COMPAT_AVAILABLE:
@@ -167,6 +178,113 @@ def get_brand_color(brand):
     return colors.get(brand, "#666")
 
 
+def render_custom_persona_builder():
+    """Render the custom persona builder UI and return the built persona"""
+
+    st.caption("62,000+ 리뷰 데이터 기반 맞춤 페르소나 생성")
+
+    # Demographics section
+    st.markdown("##### 인구통계")
+    col1, col2 = st.columns(2)
+    with col1:
+        selected_age = st.selectbox(
+            "연령대",
+            options=AGE_GROUPS,
+            index=1,  # Default to 25-29
+            help="타겟 고객의 연령대"
+        )
+    with col2:
+        selected_gender = st.selectbox(
+            "성별",
+            options=GENDERS,
+            help="타겟 고객의 성별"
+        )
+
+    # Skin profile section
+    st.markdown("##### 피부 프로필")
+    selected_skin_type = st.selectbox(
+        "피부 타입",
+        options=SKIN_TYPES,
+        index=2,  # Default to 복합성
+        help="주요 피부 타입"
+    )
+
+    selected_concerns = st.multiselect(
+        "피부 고민 (복수 선택)",
+        options=SKIN_CONCERNS,
+        default=["보습"],
+        help="타겟 고객의 주요 피부 고민을 선택하세요"
+    )
+
+    # Customer segment section (data-driven)
+    st.markdown("##### 고객 세그먼트")
+    segments = get_segment_options()
+
+    # Create segment options with descriptions
+    segment_display = {
+        f"{s['name_ko']} ({s['review_count']:,}명)": s['id']
+        for s in segments
+    }
+
+    selected_segment_display = st.selectbox(
+        "고객 유형",
+        options=list(segment_display.keys()),
+        help="62,000+ 리뷰에서 도출된 8가지 고객 세그먼트 중 선택"
+    )
+    selected_segment_id = segment_display[selected_segment_display]
+
+    # Show segment insights
+    segment_info = get_segment_insights(selected_segment_id)
+    with st.expander("🔍 세그먼트 인사이트", expanded=False):
+        st.markdown(f"**설명**: {segment_info.get('description', 'N/A')}")
+        st.markdown(f"**핵심 가치**: {', '.join(segment_info.get('core_values', []))}")
+        st.markdown(f"**긍정 트리거**: {', '.join(segment_info.get('positive_triggers', [])[:5])}")
+        st.markdown(f"**부정 트리거**: {', '.join(segment_info.get('negative_triggers', [])[:5])}")
+        st.markdown(f"**평균 평점**: {segment_info.get('avg_rating', 0):.2f}")
+
+        # Show sample review
+        samples = segment_info.get('sample_reviews', [])
+        if samples:
+            st.markdown("**샘플 리뷰**:")
+            st.caption(samples[0][:150] + "..." if len(samples[0]) > 150 else samples[0])
+
+    # Shopping behavior section
+    st.markdown("##### 구매 행동")
+    selected_price_sensitivity = st.selectbox(
+        "가격 민감도",
+        options=PRICE_SENSITIVITIES,
+        index=1,  # Default to 중간
+        help="가격에 대한 민감도"
+    )
+
+    # Build the custom persona (name auto-generated from segment)
+    persona_name = f"맞춤 {segment_info.get('name_ko', '고객')}"
+    custom_persona = build_custom_persona(
+        name=persona_name,
+        age_group=selected_age,
+        gender=selected_gender,
+        skin_type=selected_skin_type,
+        skin_concerns=selected_concerns,
+        segment_id=selected_segment_id,
+        price_sensitivity=selected_price_sensitivity
+    )
+
+    # Show persona preview
+    with st.expander("📋 생성된 페르소나 미리보기", expanded=True):
+        st.markdown(f"**이름**: {custom_persona['name']}")
+        st.markdown(f"**연령대**: {custom_persona['age_group']}")
+        st.markdown(f"**성별**: {custom_persona['gender']}")
+        st.markdown(f"**피부타입**: {custom_persona['skin_type']}")
+        st.markdown(f"**피부고민**: {', '.join(custom_persona.get('skin_concerns', []))}")
+        st.markdown(f"**고객 유형**: {segment_info.get('name_ko', 'N/A')}")
+        st.markdown(f"**라이프스타일**: {custom_persona.get('lifestyle', 'N/A')}")
+        st.markdown(f"**가격민감도**: {custom_persona.get('price_sensitivity', 'N/A')}")
+        st.markdown(f"**구매트리거**: {', '.join(custom_persona.get('purchase_triggers', []))}")
+        st.markdown(f"**커뮤니케이션**: {custom_persona.get('communication_style', 'N/A')}")
+
+    return custom_persona
+
+
 def main():
     # Header
     st.markdown('<p class="main-header">💌 CRM 메시지 자동 생성 시스템</p>', unsafe_allow_html=True)
@@ -183,26 +301,45 @@ def main():
 
         # Persona selection
         st.subheader("1. 타겟 페르소나")
-        persona_options = {f"{p['name']} ({_get_persona_age(p)})": p for p in personas}
-        selected_persona_key = st.selectbox(
-            "페르소나 선택",
-            options=list(persona_options.keys()),
-            help="타겟 고객 페르소나를 선택하세요"
-        )
-        selected_persona = persona_options[selected_persona_key]
 
-        # Show persona details
-        with st.expander("📋 페르소나 상세 정보", expanded=False):
-            st.markdown(f"**이름**: {selected_persona['name']}")
-            st.markdown(f"**연령대**: {_get_persona_age(selected_persona)}")
-            st.markdown(f"**성별**: {_get_persona_gender(selected_persona)}")
-            st.markdown(f"**피부타입**: {_get_persona_skin_type(selected_persona)}")
-            st.markdown(f"**피부고민**: {', '.join(selected_persona.get('skin_concerns', []))}")
-            st.markdown(f"**라이프스타일**: {selected_persona.get('lifestyle', 'N/A')}")
-            st.markdown(f"**선호 브랜드**: {', '.join(selected_persona.get('preferred_brands', []))}")
-            st.markdown(f"**가격민감도**: {selected_persona.get('price_sensitivity', 'N/A')}")
-            st.markdown(f"**구매트리거**: {', '.join(selected_persona.get('purchase_triggers', []))}")
-            st.markdown(f"**커뮤니케이션**: {_get_comm_style(selected_persona)}")
+        # Toggle between predefined and custom persona
+        persona_mode = st.radio(
+            "페르소나 유형",
+            options=["기존 페르소나", "맞춤 페르소나"],
+            horizontal=True,
+            help="기존 페르소나를 사용하거나 직접 맞춤 페르소나를 생성할 수 있습니다"
+        )
+
+        if persona_mode == "기존 페르소나":
+            # Predefined persona selection
+            persona_options = {f"{p['name']} ({_get_persona_age(p)})": p for p in personas}
+            selected_persona_key = st.selectbox(
+                "페르소나 선택",
+                options=list(persona_options.keys()),
+                help="타겟 고객 페르소나를 선택하세요"
+            )
+            selected_persona = persona_options[selected_persona_key]
+
+            # Show persona details
+            with st.expander("📋 페르소나 상세 정보", expanded=False):
+                st.markdown(f"**이름**: {selected_persona['name']}")
+                st.markdown(f"**연령대**: {_get_persona_age(selected_persona)}")
+                st.markdown(f"**성별**: {_get_persona_gender(selected_persona)}")
+                st.markdown(f"**피부타입**: {_get_persona_skin_type(selected_persona)}")
+                st.markdown(f"**피부고민**: {', '.join(selected_persona.get('skin_concerns', []))}")
+                st.markdown(f"**라이프스타일**: {selected_persona.get('lifestyle', 'N/A')}")
+                st.markdown(f"**선호 브랜드**: {', '.join(selected_persona.get('preferred_brands', []))}")
+                st.markdown(f"**가격민감도**: {selected_persona.get('price_sensitivity', 'N/A')}")
+                st.markdown(f"**구매트리거**: {', '.join(selected_persona.get('purchase_triggers', []))}")
+                st.markdown(f"**커뮤니케이션**: {_get_comm_style(selected_persona)}")
+
+        else:
+            # Custom persona builder
+            if CUSTOM_PERSONA_AVAILABLE:
+                selected_persona = render_custom_persona_builder()
+            else:
+                st.error("맞춤 페르소나 기능을 사용할 수 없습니다.")
+                selected_persona = personas[0]  # Fallback
 
         st.divider()
 
@@ -260,7 +397,7 @@ def main():
         generate_clicked = st.button(
             "🚀 메시지 생성",
             type="primary",
-            use_container_width=True
+            width="stretch"
         )
 
     # Main content area
@@ -274,8 +411,14 @@ def main():
             progress_bar.progress(25)
 
             # Generate message
+            # For custom personas, pass the full object; for predefined, pass ID
+            if selected_persona.get('is_custom'):
+                persona_input = selected_persona
+            else:
+                persona_input = selected_persona['id']
+
             result = generator.generate(
-                persona_id_or_name=selected_persona['id'],
+                persona_id_or_name=persona_input,
                 brand=selected_brand,
                 campaign_purpose=selected_campaign,
                 season_event=selected_season
@@ -336,7 +479,7 @@ def main():
                 data=json.dumps(result, ensure_ascii=False, indent=2),
                 file_name=f"crm_message_{selected_persona['name']}_{selected_brand}_{datetime.now().strftime('%Y%m%d_%H%M')}.json",
                 mime="application/json",
-                use_container_width=True
+                width="stretch"
             )
 
 
@@ -682,7 +825,7 @@ def display_products(result):
                 image_url = prod.get('image_url', '')
                 if image_url:
                     try:
-                        st.image(image_url, use_container_width=True)
+                        st.image(image_url, width="stretch")
                     except Exception:
                         st.markdown("🖼️ *이미지를 불러올 수 없습니다*")
                 else:

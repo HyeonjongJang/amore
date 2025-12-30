@@ -4,7 +4,7 @@ Configuration for CRM Message Generation System
 import os
 from pathlib import Path
 
-# Load .env file if exists
+# Load .env file if exists (for local development)
 try:
     from dotenv import load_dotenv
     load_dotenv(Path(__file__).parent / ".env")
@@ -28,8 +28,25 @@ CRM_EXAMPLES_PATH = DATA_DIR / "crm_examples" / "crm_examples.json"
 # Vector DB paths
 CHROMA_PERSIST_DIR = RAG_DIR / "chroma_db"
 
-# OpenAI settings
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+# OpenAI settings - support both local .env and Streamlit Cloud secrets
+def get_openai_api_key():
+    """Get OpenAI API key from environment or Streamlit secrets"""
+    # First try environment variable
+    api_key = os.getenv("OPENAI_API_KEY", "")
+    if api_key:
+        return api_key
+
+    # Try Streamlit secrets (for Streamlit Cloud deployment)
+    try:
+        import streamlit as st
+        if hasattr(st, 'secrets') and 'openai' in st.secrets:
+            return st.secrets["openai"]["api_key"]
+    except:
+        pass
+
+    return ""
+
+OPENAI_API_KEY = get_openai_api_key()
 EMBEDDING_MODEL = "text-embedding-3-small"
 LLM_MODEL = "gpt-4o-mini"
 
