@@ -10,7 +10,7 @@ import sys
 
 sys.path.append(str(Path(__file__).parent.parent))
 sys.path.append(str(Path(__file__).parent.parent / "rag"))
-from config import OPENAI_API_KEY, LLM_MODEL
+from config import get_openai_api_key, LLM_MODEL
 
 # Import persona compatibility helper
 try:
@@ -65,7 +65,7 @@ class ProductMatcherAgent:
         self.llm = ChatOpenAI(
             model=model_name,
             temperature=temperature,
-            openai_api_key=OPENAI_API_KEY
+            openai_api_key=get_openai_api_key()
         )
         self._setup_prompt()
 

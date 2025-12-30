@@ -9,7 +9,7 @@ from pathlib import Path
 import sys
 
 sys.path.append(str(Path(__file__).parent.parent))
-from config import OPENAI_API_KEY, LLM_MODEL, BRAND_TONES_PATH
+from config import get_openai_api_key, LLM_MODEL, BRAND_TONES_PATH
 
 # Import persona compatibility helper
 try:
@@ -35,7 +35,7 @@ class QualityCheckerAgent:
         self.llm = ChatOpenAI(
             model=model_name,
             temperature=temperature,
-            openai_api_key=OPENAI_API_KEY
+            openai_api_key=get_openai_api_key()
         )
         self._setup_prompt()
 

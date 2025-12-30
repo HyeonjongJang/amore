@@ -9,7 +9,7 @@ from pathlib import Path
 import sys
 
 sys.path.append(str(Path(__file__).parent.parent))
-from config import OPENAI_API_KEY, LLM_MODEL
+from config import get_openai_api_key, LLM_MODEL
 
 try:
     from utils.persona_compat import (
@@ -32,7 +32,7 @@ class PersonaAnalyzerAgent:
         self.llm = ChatOpenAI(
             model=model_name,
             temperature=temperature,
-            openai_api_key=OPENAI_API_KEY
+            openai_api_key=get_openai_api_key()
         )
         self.output_parser = JsonOutputParser()
         self._setup_prompt()

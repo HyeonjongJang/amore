@@ -1,16 +1,420 @@
-ModuleNotFoundError: This app has encountered an error. The original error message is redacted to prevent data leaks. Full error details have been recorded in the logs (if you're on Streamlit Cloud, click on 'Manage app' in the lower right of your app).
+openai.AuthenticationError: This app has encountered an error. The original error message is redacted to prevent data leaks. Full error details have been recorded in the logs (if you're on Streamlit Cloud, click on 'Manage app' in the lower right of your app).
 Traceback:
-File "/mount/src/amore/ui/streamlit_app.py", line 14, in <module>
-    from main import CRMMessageGenerator
-File "/mount/src/amore/./main.py", line 15, in <module>
-    from agents.persona_analyzer import PersonaAnalyzerAgent
-File "/mount/src/amore/./agents/__init__.py", line 5, in <module>
-    from .product_matcher import ProductMatcherAgent
-File "/mount/src/amore/./agents/product_matcher.py", line 29, in <module>
-    from retriever import ProductRetriever
-File "/mount/src/amore/rag/retriever.py", line 16, in <module>
-    from vector_store import ProductVectorStore
-File "/mount/src/amore/rag/vector_store.py", line 28, in <module>
-    raise e
-File "/mount/src/amore/rag/vector_store.py", line 22, in <module>
-    from langchain_chroma import Chroma
+File "/mount/src/amore/ui/streamlit_app.py", line 896, in <module>
+    main()
+File "/mount/src/amore/ui/streamlit_app.py", line 294, in main
+    generator = load_generator()
+File "/home/adminuser/venv/lib/python3.10/site-packages/streamlit/runtime/caching/cache_utils.py", line 228, in __call__
+    return self._get_or_create_cached_value(args, kwargs, spinner_message)
+File "/home/adminuser/venv/lib/python3.10/site-packages/streamlit/runtime/caching/cache_utils.py", line 270, in _get_or_create_cached_value
+    return self._handle_cache_miss(cache, value_key, func_args, func_kwargs)
+File "/home/adminuser/venv/lib/python3.10/site-packages/streamlit/runtime/caching/cache_utils.py", line 329, in _handle_cache_miss
+    computed_value = self._info.func(*func_args, **func_kwargs)
+File "/mount/src/amore/ui/streamlit_app.py", line 142, in load_generator
+    return CRMMessageGenerator()
+File "/mount/src/amore/./main.py", line 57, in __init__
+    self.product_matcher = ProductMatcherAgent()
+File "/mount/src/amore/./agents/product_matcher.py", line 64, in __init__
+    self.retriever = retriever or ProductRetriever()
+File "/mount/src/amore/./rag/retriever.py", line 26, in __init__
+    self.vector_store.build_vector_store()
+File "/mount/src/amore/./rag/vector_store.py", line 187, in build_vector_store
+    self.vector_store = Chroma.from_documents(
+File "/home/adminuser/venv/lib/python3.10/site-packages/langchain_chroma/vectorstores.py", line 1431, in from_documents
+    return cls.from_texts(
+File "/home/adminuser/venv/lib/python3.10/site-packages/langchain_chroma/vectorstores.py", line 1365, in from_texts
+    chroma_collection.add_texts(
+File "/home/adminuser/venv/lib/python3.10/site-packages/langchain_chroma/vectorstores.py", line 627, in add_texts
+    embeddings = self._embedding_function.embed_documents(texts)
+File "/home/adminuser/venv/lib/python3.10/site-packages/langchain_openai/embeddings/base.py", line 709, in embed_documents
+    return self._get_len_safe_embeddings(
+File "/home/adminuser/venv/lib/python3.10/site-packages/langchain_openai/embeddings/base.py", line 576, in _get_len_safe_embeddings
+    response = self.client.create(input=batch_tokens, **client_kwargs)
+File "/home/adminuser/venv/lib/python3.10/site-packages/openai/resources/embeddings.py", line 132, in create
+    return self._post(
+File "/home/adminuser/venv/lib/python3.10/site-packages/openai/_base_client.py", line 1259, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+File "/home/adminuser/venv/lib/python3.10/site-packages/openai/_base_client.py", line 1047, in request
+    raise self._make_status_error_from_response(err.response) from None
+
+
+[04:29:44] 🐍 Python dependencies were installed from /mount/src/amore/requirements.txt using uv.
+
+Check if streamlit is installed
+
+Streamlit is already installed
+
+[04:29:46] 📦 Processed dependencies!
+
+
+
+
+Creating new CRMMessageGenerator instance...
+
+Loading processed products...
+
+Creating documents from 516 products...
+
+Splitting documents...
+
+Total documents after splitting: 1548
+
+Building vector store (this may take a few minutes)...
+
+────────────────────── Traceback (most recent call last) ───────────────────────
+
+  /home/adminuser/venv/lib/python3.10/site-packages/streamlit/runtime/scriptru  
+
+  nner/exec_code.py:129 in exec_func_with_error_handling                        
+
+                                                                                
+
+  /home/adminuser/venv/lib/python3.10/site-packages/streamlit/runtime/scriptru  
+
+  nner/script_runner.py:671 in code_to_exec                                     
+
+                                                                                
+
+  /mount/src/amore/ui/streamlit_app.py:896 in <module>                          
+
+                                                                                
+
+    893                                                                         
+
+    894                                                                         
+
+    895 if __name__ == "__main__":                                              
+
+  ❱ 896 │   main()                                                              
+
+    897                                                                         
+
+                                                                                
+
+  /mount/src/amore/ui/streamlit_app.py:294 in main                              
+
+                                                                                
+
+    291 │   st.markdown('<p class="sub-header">AI Agent가 고객 페르소나에 맞는  
+
+    292 │                                                                       
+
+    293 │   # Load resources                                                    
+
+  ❱ 294 │   generator = load_generator()                                        
+
+    295 │   personas = load_personas()                                          
+
+    296 │   brand_tones = load_brand_tones()                                    
+
+    297                                                                         
+
+                                                                                
+
+  /home/adminuser/venv/lib/python3.10/site-packages/streamlit/runtime/caching/  
+
+  cache_utils.py:228 in __call__                                                
+
+                                                                                
+
+  /home/adminuser/venv/lib/python3.10/site-packages/streamlit/runtime/caching/  
+
+  cache_utils.py:270 in _get_or_create_cached_value                             
+
+                                                                                
+
+  /home/adminuser/venv/lib/python3.10/site-packages/streamlit/runtime/caching/  
+
+  cache_utils.py:329 in _handle_cache_miss                                      
+
+                                                                                
+
+  /mount/src/amore/ui/streamlit_app.py:142 in load_generator                    
+
+                                                                                
+
+    139 def load_generator():                                                   
+
+    140 │   """Load the CRM generator (cached for 5 minutes)"""                 
+
+    141 │   print("Creating new CRMMessageGenerator instance...")               
+
+  ❱ 142 │   return CRMMessageGenerator()                                        
+
+    143                                                                         
+
+    144                                                                         
+
+    145 @st.cache_data                                                          
+
+                                                                                
+
+  /mount/src/amore/./main.py:57 in __init__                                     
+
+                                                                                
+
+     54 │   │                                                                   
+
+     55 │   │   # Initialize agents                                             
+
+     56 │   │   self.persona_analyzer = PersonaAnalyzerAgent()                  
+
+  ❱  57 │   │   self.product_matcher = ProductMatcherAgent()                    
+
+     58 │   │   self.message_generator = MessageGeneratorAgent(brand_tones=sel  
+
+     59 │   │   self.quality_checker = QualityCheckerAgent(brand_tones=self.br  
+
+     60                                                                         
+
+                                                                                
+
+  /mount/src/amore/./agents/product_matcher.py:64 in __init__                   
+
+                                                                                
+
+     61 │   │   model_name: str = LLM_MODEL,                                    
+
+     62 │   │   temperature: float = 0.3                                        
+
+     63 │   ):                                                                  
+
+  ❱  64 │   │   self.retriever = retriever or ProductRetriever()                
+
+     65 │   │   self.llm = ChatOpenAI(                                          
+
+     66 │   │   │   model=model_name,                                           
+
+     67 │   │   │   temperature=temperature,                                    
+
+                                                                                
+
+  /mount/src/amore/./rag/retriever.py:26 in __init__                            
+
+                                                                                
+
+     23 │   │   self.vector_store = vector_store or ProductVectorStore()        
+
+     24 │   │   # Ensure vector store is loaded                                 
+
+     25 │   │   if self.vector_store.vector_store is None:                      
+
+  ❱  26 │   │   │   self.vector_store.build_vector_store()                      
+
+     27 │                                                                       
+
+     28 │   def _build_persona_query(self, persona: Dict[str, Any]) -> str:     
+
+     29 │   │   """Build a search query from persona attributes"""              
+
+                                                                                
+
+  /mount/src/amore/./rag/vector_store.py:187 in build_vector_store              
+
+                                                                                
+
+    184 │   │   print("Building vector store (this may take a few minutes)..."  
+
+    185 │   │   persist_path.mkdir(parents=True, exist_ok=True)                 
+
+    186 │   │                                                                   
+
+  ❱ 187 │   │   self.vector_store = Chroma.from_documents(                      
+
+    188 │   │   │   documents=split_docs,                                       
+
+    189 │   │   │   embedding=self.embeddings,                                  
+
+    190 │   │   │   collection_name=self.collection_name,                       
+
+                                                                                
+
+  /home/adminuser/venv/lib/python3.10/site-packages/langchain_chroma/vectorsto  
+
+  res.py:1431 in from_documents                                                 
+
+                                                                                
+
+    1428 │   │   metadatas = [doc.metadata for doc in documents]                
+
+    1429 │   │   if ids is None:                                                
+
+    1430 │   │   │   ids = [doc.id if doc.id else str(uuid.uuid4()) for doc in  
+
+  ❱ 1431 │   │   return cls.from_texts(                                         
+
+    1432 │   │   │   texts=texts,                                               
+
+    1433 │   │   │   embedding=embedding,                                       
+
+    1434 │   │   │   metadatas=metadatas,                                       
+
+                                                                                
+
+  /home/adminuser/venv/lib/python3.10/site-packages/langchain_chroma/vectorsto  
+
+  res.py:1365 in from_texts                                                     
+
+                                                                                
+
+    1362 │   │   │   │   metadatas=metadatas,  # type: ignore[arg-type]         
+
+    1363 │   │   │   │   documents=texts,                                       
+
+    1364 │   │   │   ):                                                         
+
+  ❱ 1365 │   │   │   │   chroma_collection.add_texts(                           
+
+    1366 │   │   │   │   │   texts=batch[3] if batch[3] else [],                
+
+    1367 │   │   │   │   │   metadatas=batch[2] if batch[2] else None,  # type  
+
+    1368 │   │   │   │   │   ids=batch[0],                                      
+
+                                                                                
+
+  /home/adminuser/venv/lib/python3.10/site-packages/langchain_chroma/vectorsto  
+
+  res.py:627 in add_texts                                                       
+
+                                                                                
+
+     624 │   │   embeddings = None                                              
+
+     625 │   │   texts = list(texts)                                            
+
+     626 │   │   if self._embedding_function is not None:                       
+
+  ❱  627 │   │   │   embeddings = self._embedding_function.embed_documents(tex  
+
+     628 │   │   if metadatas:                                                  
+
+     629 │   │   │   # fill metadatas with empty dicts if somebody              
+
+     630 │   │   │   # did not specify metadata for all texts                   
+
+                                                                                
+
+  /home/adminuser/venv/lib/python3.10/site-packages/langchain_openai/embedding  
+
+  s/base.py:709 in embed_documents                                              
+
+                                                                                
+
+    706 │   │   # Unconditionally call _get_len_safe_embeddings to handle leng  
+
+    707 │   │   # This could be optimized to avoid double work when all texts   
+
+    708 │   │   engine = cast(str, self.deployment)                             
+
+  ❱ 709 │   │   return self._get_len_safe_embeddings(                           
+
+    710 │   │   │   texts, engine=engine, chunk_size=chunk_size, **kwargs       
+
+    711 │   │   )                                                               
+
+    712                                                                         
+
+                                                                                
+
+  /home/adminuser/venv/lib/python3.10/site-packages/langchain_openai/embedding  
+
+  s/base.py:576 in _get_len_safe_embeddings                                     
+
+                                                                                
+
+    573 │   │   │                                                               
+
+    574 │   │   │   # Make API call with this batch                             
+
+    575 │   │   │   batch_tokens = tokens[i:batch_end]                          
+
+  ❱ 576 │   │   │   response = self.client.create(input=batch_tokens, **client  
+
+    577 │   │   │   if not isinstance(response, dict):                          
+
+    578 │   │   │   │   response = response.model_dump()                        
+
+    579 │   │   │   batched_embeddings.extend(r["embedding"] for r in response  
+
+                                                                                
+
+  /home/adminuser/venv/lib/python3.10/site-packages/openai/resources/embedding  
+
+  s.py:132 in create                                                            
+
+                                                                                
+
+    129 │   │   │                                                               
+
+    130 │   │   │   return obj                                                  
+
+    131 │   │                                                                   
+
+  ❱ 132 │   │   return self._post(                                              
+
+    133 │   │   │   "/embeddings",                                              
+
+    134 │   │   │   body=maybe_transform(params, embedding_create_params.Embed  
+
+    135 │   │   │   options=make_request_options(                               
+
+                                                                                
+
+  /home/adminuser/venv/lib/python3.10/site-packages/openai/_base_client.py:125  
+
+  9 in post                                                                     
+
+                                                                                
+
+    1256 │   │   opts = FinalRequestOptions.construct(                          
+
+    1257 │   │   │   method="post", url=path, json_data=body, files=to_httpx_f  
+
+    1258 │   │   )                                                              
+
+  ❱ 1259 │   │   return cast(ResponseT, self.request(cast_to, opts, stream=str  
+
+    1260 │                                                                      
+
+    1261 │   def patch(                                                         
+
+    1262 │   │   self,                                                          
+
+                                                                                
+
+  /home/adminuser/venv/lib/python3.10/site-packages/openai/_base_client.py:104  
+
+  7 in request                                                                  
+
+                                                                                
+
+    1044 │   │   │   │   │   err.response.read()                                
+
+    1045 │   │   │   │                                                          
+
+    1046 │   │   │   │   log.debug("Re-raising status error")                   
+
+  ❱ 1047 │   │   │   │   raise self._make_status_error_from_response(err.respo  
+
+    1048 │   │   │                                                              
+
+    1049 │   │   │   break                                                      
+
+    1050                                                                        
+
+────────────────────────────────────────────────────────────────────────────────
+
+AuthenticationError: Error code: 401 - {'error': {'message': "You didn't provide
+
+an API key. You need to provide your API key in an Authorization header using 
+
+Bearer auth (i.e. Authorization: Bearer YOUR_KEY), or as the password field 
+
+(with blank username) if you're accessing the API from your browser and are 
+
+prompted for a username and password. You can obtain an API key from 
+
+https://platform.openai.com/account/api-keys.", 'type': 'invalid_request_error',
+
+'param': None, 'code': None}}

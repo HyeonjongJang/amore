@@ -39,13 +39,20 @@ def get_openai_api_key():
     # Try Streamlit secrets (for Streamlit Cloud deployment)
     try:
         import streamlit as st
-        if hasattr(st, 'secrets') and 'openai' in st.secrets:
-            return st.secrets["openai"]["api_key"]
-    except:
+        if hasattr(st, 'secrets'):
+            # Try [openai] section format
+            if 'openai' in st.secrets:
+                return st.secrets["openai"]["api_key"]
+            # Try direct OPENAI_API_KEY format
+            if 'OPENAI_API_KEY' in st.secrets:
+                return st.secrets["OPENAI_API_KEY"]
+    except Exception:
         pass
 
     return ""
 
+# Note: This is evaluated at import time. For Streamlit Cloud,
+# the key may need to be fetched at runtime in some modules.
 OPENAI_API_KEY = get_openai_api_key()
 EMBEDDING_MODEL = "text-embedding-3-small"
 LLM_MODEL = "gpt-4o-mini"

@@ -14,7 +14,7 @@ from config import (
     EMBEDDING_MODEL,
     CHUNK_SIZE,
     CHUNK_OVERLAP,
-    OPENAI_API_KEY,
+    get_openai_api_key,
 )
 
 try:
@@ -40,7 +40,7 @@ class ProductVectorStore:
         self.collection_name = collection_name
         self.embeddings = OpenAIEmbeddings(
             model=EMBEDDING_MODEL,
-            openai_api_key=OPENAI_API_KEY
+            openai_api_key=get_openai_api_key()  # Fetch at runtime for Streamlit Cloud
         )
         self.vector_store = None
         self.text_splitter = RecursiveCharacterTextSplitter(
