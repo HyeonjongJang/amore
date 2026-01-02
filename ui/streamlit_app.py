@@ -12,7 +12,8 @@ from datetime import datetime
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from main import CRMMessageGenerator
-from config import PERSONAS_PATH, BRAND_TONES_PATH
+from config import PERSONAS_PATH, BRAND_TONES_PATH, LLM_MODEL, get_openai_api_key
+from openai import OpenAI
 
 # Import persona compatibility helper
 try:
@@ -176,6 +177,223 @@ def get_brand_color(brand):
         "에뛰드": "#FF69B4"
     }
     return colors.get(brand, "#666")
+
+
+# Message Strategic Rationale
+def synthesize_strategy_with_llm(result): 
+    """LLM을 사용하여 전체 캠페인 전략 종합 분석"""
+    persona = result.get('persona', {})
+    insights = result.get('persona_insights', {})
+    messages = result.get('messages', {}).get('product_messages', [])
+    
+    msg_summary_text = ""
+    for idx, msg in enumerate(messages):
+        p_name = msg.get('product_name', f"제품 {idx+1}")
+        main_copy = msg.get('main_message', {}).get('body', '')
+        angle = msg.get('main_message', {}).get('angle', '')
+        msg_summary_text += f"- {p_name}: (소구점: {angle}) \"{main_copy}\"\n"
+
+    prompt = f"""
+    당신은 전문 CRM 마케팅 디렉터입니다. 
+    아래의 [타겟 고객]과 우리가 생성한 [CRM 메시지]들을 분석하여, 
+    이 캠페인이 어떤 전략적 의도로 기획되었는지 설명하는 '종합 전략 리포트'를 작성해주세요.
+
+    [타겟 고객 정보]
+    - 이름: {persona.get('name', '고객')}
+    - 구매 동기: {", ".join(insights.get('purchase_motivations', []))}
+    - 감성 트리거: {", ".join(insights.get('emotional_triggers', []))}
+
+    [생성된 메시지 목록]
+    {msg_summary_text}
+
+    [요청 사항]
+    1. 이 메시지들이 고객의 어떤 심리를 공략하고 있는지 분석하세요.
+    2. 전체를 관통하는 톤앤매너와 핵심 전략이 무엇인지 3~4문장의 자연스러운 줄글로 요약하세요.
+    3. 문체는 '전문적이고 설득력 있는' 어조로 작성하세요. (예: "~님은 ~한 성향이 있어, 이에 맞춰 ~를 강조했습니다.")
+    4. 결과물은 분석 내용만 출력하세요. (인사말, 서론 제외)
+    """
+
+    try:
+        client = OpenAI(api_key=get_openai_api_key())
+        
+        response = client.chat.completions.create(
+            model=LLM_MODEL,
+            messages=[
+                {"role": "system", "content": "당신은 통찰력 있는 CRM 마케팅 전략가입니다."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.4,
+            max_tokens=1000
+        )
+        
+        generated_strategy = response.choices[0].message.content.strip()
+        
+        if 'messages' not in result:
+            result['messages'] = {}
+            
+        result['messages']['overall_strategy'] = generated_strategy
+        
+    except Exception as e:
+        print(f"⚠️ 전략 생성 중 에러 발생: {e}")
+
+        if 'messages' not in result:
+             result['messages'] = {}
+        result['messages']['overall_strategy'] = ""
+
+    return result
+
+
+def analyze_performance_with_llm(result):
+    """LLM을 사용하여 성과 예측 분석"""
+    persona = result.get('persona', {})
+    insights = result.get('persona_insights', {})
+    messages = result.get('messages', {}).get('product_messages', [])
+    
+    if not messages:
+        return result
+
+    msg_summary_text = ""
+    for idx, msg in enumerate(messages):
+        p_name = msg.get('product_name', f"제품 {idx+1}")
+        main_copy = msg.get('main_message', {}).get('body', '')
+        angle = msg.get('main_message', {}).get('angle', '')
+        msg_summary_text += f"- {p_name} (소구점: {angle}): \"{main_copy}\"\n"
+
+    prompt = f"""
+    당신은 데이터 기반의 CRM 퍼포먼스 마케팅 전문가입니다.
+    아래 타겟 고객에게 발송될 메시지의 예상 성과를 냉철하게 시뮬레이션하여 분석 리포트를 작성하세요.
+
+    [타겟 고객]
+    - 페르소나: {persona.get('name')}
+    - 주요 니즈: {", ".join(insights.get('purchase_motivations', []))}
+    - 성향: {persona.get('communication_style', '정보 없음')}
+
+    [분석 대상 메시지]
+    {msg_summary_text}
+
+    [분석 요청 항목]
+    1. **predicted_ctr**: 예상 클릭률 (구체적 수치 범위, 예: '2.8% ~ 3.5%')
+    2. **predicted_cvr**: 예상 구매 전환율 (구체적 수치 범위, 예: '1.2% 내외')
+    3. **prediction_logic**: 위 수치로 예측한 논리적 근거 (2문장)
+    4. **buying_psychology**: 이 메시지가 자극하는 고객의 심리 기제 (예: 손실 회피, 사회적 증거, 희소성 등)
+
+    [출력 포맷]
+    반드시 아래 JSON 포맷으로만 출력하세요.
+    {{
+        "predicted_ctr": "...",
+        "predicted_cvr": "...",
+        "prediction_logic": "...",
+        "strengths": ["...", "...", "..."],
+        "weaknesses": ["...", "..."],
+        "buying_psychology": "..."
+    }}
+    """
+
+    try:
+        client = OpenAI(api_key=get_openai_api_key())
+        
+        response = client.chat.completions.create(
+            model=LLM_MODEL, 
+            messages=[
+                {"role": "system", "content": "You are a data analyst outputting in JSON."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.4,
+            response_format={"type": "json_object"} 
+        )
+        
+        content = response.choices[0].message.content
+        analysis_data = json.loads(content)
+        
+        if 'messages' not in result:
+            result['messages'] = {}
+            
+        result['messages']['performance_analysis'] = analysis_data
+        
+    except Exception as e:
+        print(f"⚠️ 성과 분석 중 에러 발생: {e}")
+        
+        if 'messages' in result:
+            result['messages']['performance_analysis'] = {}
+
+    return result
+
+
+def create_markdown_report(result):
+    """전략적 근거와 논리가 포함된 심층 보고서 생성"""
+    # 데이터 추출
+    quality = result.get('quality_details', {})
+    validation = quality.get('validation', {})
+    perf = quality.get('predicted_performance', {})
+    insights = result.get('persona_insights', {})
+    
+    # 메시지 추출
+    msg = result.get('messages', {}).get('main_message', {})
+    if not msg and result.get('messages', {}).get('product_messages'):
+        pm = result['messages']['product_messages'][0]
+        msg = pm.get('main_message', {})
+        product_name = pm.get('product_name', '제품')
+    else:
+        product_name = result.get('recommended_products', [{}])[0].get('product_name', '제품')
+
+    # 보고서 작성
+    report = []
+    report.append(f"# 📑 CRM 메시지 전략 및 품질 분석 보고서")
+    report.append(f"**발행 일시:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+
+    report.append("## 1. 전략적 배경 (Strategic Context)")
+    report.append("AI 에이전트가 분석한 타겟 고객과 마케팅 의도입니다.\n")
+    report.append(f"- **타겟 페르소나:** {result.get('persona', {}).get('name')}")
+    report.append(f"  - *핵심 구매 동기:* {', '.join(insights.get('purchase_motivations', [])[:3])}")
+    report.append(f"  - *감성 트리거:* {', '.join(insights.get('emotional_triggers', [])[:2])}")
+    report.append(f"- **캠페인 목적:** {result.get('campaign_purpose')} ({result.get('season_event')})")
+    report.append(f"- **선정 제품:** {product_name}")
+    
+    # 제품 선정 이유 (Product Matcher 결과 활용)
+    products = result.get('recommended_products', [])
+    if products:
+        fit_reason = products[0].get('persona_fit_reason', '정보 없음')
+        report.append(f"  - *선정 근거:* {fit_reason}\n")
+
+    report.append("## 2. 메시지 크리에이티브 (Creative)")
+    report.append(f"> **{msg.get('title', '제목 없음')}**")
+    report.append(f">")
+    report.append(f"> {msg.get('body', '본문 없음').replace(chr(10), chr(10)+'> ')}")
+    report.append(f">")
+    report.append(f"> *CTA: {msg.get('cta', '없음')}*")
+    
+    if msg.get('angle'):
+        report.append(f"\n**💡 소구 포인트 (Angle):** {msg.get('angle')}")
+
+    report.append("\n## 3. 생성 논리 및 근거 (Why this Message?)")
+    report.append("이 메시지가 해당 고객에게 효과적인 이유를 분석했습니다.\n")
+    
+    # 강점 데이터를 문장으로 풀어서 설명
+    strengths = quality.get('strengths', [])
+    if strengths:
+        report.append("**✅ 주요 성공 요인:**")
+        for s in strengths:
+            report.append(f"- {s}")
+    
+    report.append(f"\n**🎯 성과 예측:** CTR {perf.get('estimated_ctr', 'N/A')} / CVR {perf.get('estimated_cvr', 'N/A')}")
+    report.append(f"- *예측 근거:* {perf.get('performance_reasoning', '분석 불가')}")
+
+    report.append("\n## 4. 품질 검증 상세 (Quality Check)")
+    report.append(f"**종합 판정: {quality.get('final_verdict', 'N/A')} ({validation.get('overall_score', 0)}/10)**\n")
+    
+    report.append("| 검증 항목 | 점수 | 상세 피드백 |")
+    report.append("|---|---|---|")
+    report.append(f"| 브랜드 톤앤매너 | {validation.get('brand_tone_score')}/10 | {validation.get('brand_tone_feedback')} |")
+    report.append(f"| 페르소나 적합도 | {validation.get('persona_fit_score')}/10 | {validation.get('persona_fit_feedback')} |")
+    report.append(f"| 자연스러움 | {validation.get('naturalness_score')}/10 | {validation.get('naturalness_feedback')} |")
+    report.append(f"| CTA 명확성 | {validation.get('cta_clarity_score')}/10 | {validation.get('cta_feedback')} |")
+
+    if quality.get('improvement_suggestions'):
+        report.append("\n**🛠 개선 제안:**")
+        for sug in quality.get('improvement_suggestions', []):
+            report.append(f"- {sug}")
+
+    return "\n".join(report)
 
 
 def render_custom_persona_builder():
@@ -407,8 +625,8 @@ def main():
             progress_bar = st.progress(0)
             status_text = st.empty()
 
-            status_text.text("1/4 페르소나 분석 중...")
-            progress_bar.progress(25)
+            status_text.text("1/5 페르소나 분석 중...")
+            progress_bar.progress(20)
 
             # Generate message
             # For custom personas, pass the full object; for predefined, pass ID
@@ -424,13 +642,18 @@ def main():
                 season_event=selected_season
             )
 
-            status_text.text("2/4 제품 매칭 중...")
-            progress_bar.progress(50)
+            status_text.text("2/5 제품 매칭 중...")
+            progress_bar.progress(40)
 
-            status_text.text("3/4 메시지 작성 중...")
-            progress_bar.progress(75)
+            status_text.text("3/5 메시지 작성 중...")
+            progress_bar.progress(60)
 
-            status_text.text("4/4 품질 검증 중...")
+            status_text.text("4/5 품질 검증 중...")
+            progress_bar.progress(80)
+
+            status_text.text("5/5 전체 캠페인 전략 종합 분석 중...")
+            result = synthesize_strategy_with_llm(result)
+            result = analyze_performance_with_llm(result)
             progress_bar.progress(100)
 
             status_text.empty()
@@ -675,61 +898,67 @@ def display_messages_legacy(result):
 
 
 def display_quality_report(result):
-    """Display quality report"""
+    """Display quality report with strategic rationale"""
     quality = result.get('quality_details', {})
-    summary = result.get('quality_summary', {})
-
-    # Summary metrics
-    st.subheader("📈 품질 점수 요약")
-
-    col1, col2, col3, col4 = st.columns(4)
-
-    scores = summary.get('scores', {})
-
-    with col1:
-        score = scores.get('overall', 0)
-        st.metric("전체 점수", f"{score}/10")
-
-    with col2:
-        score = scores.get('brand_tone', 0)
-        st.metric("브랜드 톤", f"{score}/10")
-
-    with col3:
-        score = scores.get('persona_fit', 0)
-        st.metric("페르소나 적합도", f"{score}/10")
-
-    with col4:
-        score = scores.get('naturalness', 0)
-        st.metric("자연스러움", f"{score}/10")
-
-    # Verdict
-    verdict = summary.get('verdict', 'UNKNOWN')
-    verdict_colors = {
-        'APPROVED': '🟢',
-        'NEEDS_REVISION': '🟡',
-        'REJECTED': '🔴'
-    }
-    st.markdown(f"### 최종 판정: {verdict_colors.get(verdict, '⚪')} {verdict}")
-
-    # Performance prediction
-    st.subheader("📊 예상 성과")
-
+    validation = quality.get('validation', {})
     perf = quality.get('predicted_performance', {})
+    
+    # 🧠 메시지 생성 논리 (Strategic Rationale)
+    st.subheader("🧠 메시지 생성 논리 (Strategic Rationale)")
+    
+    overall_strategy = result.get('messages', {}).get('overall_strategy', '')
+    
+    if overall_strategy:
+        st.info(overall_strategy, icon="💡")
+    else:
+        st.warning("⚠️ 메시지 전략 분석 내용을 불러올 수 없습니다.")
 
-    col1, col2, col3 = st.columns(3)
+    perf_analysis = result.get('messages', {}).get('performance_analysis', {})
+    if not perf_analysis:
+        perf_analysis = result.get('quality_details', {}).get('predicted_performance', {})
 
-    with col1:
-        st.metric("예상 클릭률 (CTR)", perf.get('estimated_ctr', 'N/A'))
+    st.divider()
 
-    with col2:
-        st.metric("예상 전환율 (CVR)", perf.get('estimated_cvr', 'N/A'))
+    # 📊 성과 예측 및 근거
+    st.subheader("📊 성과 예측 및 근거")
+    
+    c1, c2 = st.columns([1, 2])
+    with c1:
+        st.metric("예상 클릭률 (CTR)", perf.get('estimated_ctr', perf_analysis.get('predicted_ctr', 'N/A')))
+        st.metric("예상 전환율 (CVR)", perf.get('estimated_cvr', perf_analysis.get('predicted_cvr', 'N/A')))
+    with c2:
+        st.markdown("🔍 AI 분석 근거")
+        logic = perf_analysis.get('prediction_logic', perf_analysis.get('performance_reasoning', perf.get('performance_reasoning', '분석 데이터 없음')))
+        st.info(logic) 
 
-    with col3:
-        confidence = perf.get('confidence', 'medium')
-        conf_emoji = {'high': '🟢', 'medium': '🟡', 'low': '🔴'}
-        st.metric("예측 신뢰도", f"{conf_emoji.get(confidence, '⚪')} {confidence}")
+    st.divider()
 
-    # Recommendations
+    # ✅ 품질 검증 상세
+    st.subheader("✅ 품질 검증 상세")
+    
+    verdict = quality.get('final_verdict')
+    overall_score = validation.get('overall_score', 0)
+    if verdict == 'APPROVED':
+        st.markdown(f"**최종 판정:** :green[**승인 (APPROVED)**] ({overall_score}/10)")
+    else:
+        st.markdown(f"**최종 판정:** :orange[**검토 필요 ({verdict})**] ({overall_score}/10)")
+        
+    with st.expander("📝 항목별 상세 피드백 열기", expanded=True):
+        evals = [
+            ("🎨 브랜드 톤앤매너", validation.get('brand_tone_score'), validation.get('brand_tone_feedback')),
+            ("👤 페르소나 적합도", validation.get('persona_fit_score'), validation.get('persona_fit_feedback')),
+            ("🗣️ 표현의 자연스러움", validation.get('naturalness_score'), validation.get('naturalness_feedback')),
+            ("🔘 CTA 명확성", validation.get('cta_clarity_score'), validation.get('cta_feedback'))
+        ]
+        
+        for label, score, feedback in evals:
+            cols = st.columns([2, 1, 5])
+            cols[0].markdown(f"**{label}**")
+            cols[1].markdown(f"**{score}점**" if score else "**-**")
+            cols[2].caption(feedback if feedback else "-")
+
+    # 추천 사항 (기존 기능 유지)
+    st.divider()
     st.subheader("💡 추천 사항")
 
     col1, col2 = st.columns(2)
@@ -737,23 +966,43 @@ def display_quality_report(result):
     with col1:
         st.markdown("**강점**")
         strengths = quality.get('strengths', [])
-        for s in strengths:
-            st.markdown(f"✅ {s}")
+        if strengths:
+            for s in strengths:
+                st.markdown(f"✅ {s}")
+        else:
+            # performance_analysis에서 가져오기
+            perf_strengths = perf_analysis.get('strengths', [])
+            for s in perf_strengths:
+                st.markdown(f"✅ {s}")
 
     with col2:
         st.markdown("**개선 제안**")
         suggestions = quality.get('improvement_suggestions', [])
-        for s in suggestions:
-            st.markdown(f"💡 {s}")
+        if suggestions:
+            for s in suggestions:
+                st.markdown(f"💡 {s}")
+        else:
+            # performance_analysis에서 가져오기
+            weaknesses = perf_analysis.get('weaknesses', [])
+            for w in weaknesses:
+                st.markdown(f"💡 {w}")
 
-    # Send time recommendation
+    # 추천 발송 시간
     send_time = quality.get('recommended_send_time', '')
     if send_time:
         st.info(f"📅 **추천 발송 시간**: {send_time}")
 
-    # Product-level validations (new structure)
+    # 구매 심리 분석 (새 기능)
+    buying_psychology = perf_analysis.get('buying_psychology', '')
+    if buying_psychology:
+        st.divider()
+        st.subheader("🧠 구매 심리 분석")
+        st.info(f"**자극되는 심리 기제**: {buying_psychology}")
+
+    # Product-level validations (기존 기능 유지)
     product_validations = quality.get('product_validations', [])
     if product_validations:
+        st.divider()
         st.subheader("📋 제품별 메시지 검증")
 
         for pv in product_validations:

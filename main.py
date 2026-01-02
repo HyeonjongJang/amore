@@ -381,6 +381,43 @@ def run_crm_agent(
     )
 
 
+def print_detailed_report(result: Dict[str, Any]):
+    """품질 분석 결과 상세 보고서 출력 함수"""
+    quality = result.get('quality_details', {})
+    validation = quality.get('validation', {})
+    perf = quality.get('predicted_performance', {})
+    
+    print("\n" + "="*70)
+    print("📋 CRM 메시지 품질 분석 상세 보고서")
+    print("="*70)
+    
+    print(f"\n1️⃣ 종합 평가")
+    print(f"   • 최종 판정: {quality.get('final_verdict', 'N/A')}")
+    print(f"   • 종합 점수: {validation.get('overall_score', 0)} / 10 점")
+    print(f"   • 판정 사유: {quality.get('verdict_reason', 'N/A')}")
+
+    print(f"\n2️⃣ 항목별 상세 분석")
+    scores = [
+        ("브랜드 톤앤매너", 'brand_tone_score', 'brand_tone_feedback'),
+        ("페르소나 적합도", 'persona_fit_score', 'persona_fit_feedback'),
+        ("표현의 자연스러움", 'naturalness_score', 'naturalness_feedback'),
+        ("CTA(행동유도) 명확성", 'cta_clarity_score', 'cta_feedback')
+    ]
+    
+    for label, score_key, feedback_key in scores:
+        score = validation.get(score_key, 0)
+        feedback = validation.get(feedback_key, "")
+        print(f"   - {label}: {score}점")
+        print(f"     └─ {feedback}")
+
+    print(f"\n3️⃣ 성과 예측 (AI Prediction)")
+    print(f"   • 예상 클릭률(CTR): {perf.get('estimated_ctr', 'N/A')}")
+    print(f"   • 예상 전환율(CVR): {perf.get('estimated_cvr', 'N/A')}")
+    print(f"   • 예측 근거: {perf.get('performance_reasoning', '')}")
+  
+    print("="*70 + "\n")
+
+
 # Test function
 def test_full_pipeline():
     """Test the complete pipeline"""
@@ -433,8 +470,10 @@ def test_full_pipeline():
         print(msg.get('body', ''))
         print(f"\nCTA: {msg.get('cta', '')}")
 
-    # Quality summary
-    if 'quality_summary' in result:
+    # Quality summary - 상세 보고서 출력
+    if 'quality_details' in result:
+        print_detailed_report(result)
+    elif 'quality_summary' in result:
         qs = result['quality_summary']
         print("\n--- QUALITY SUMMARY ---")
         print(f"Average Score: {qs.get('average_score', 0)}/10")

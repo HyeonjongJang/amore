@@ -4,7 +4,7 @@ Configuration for CRM Message Generation System
 import os
 from pathlib import Path
 
-# Load .env file if exists (for local development)
+# Load .env file if exists
 try:
     from dotenv import load_dotenv
     load_dotenv(Path(__file__).parent / ".env")
@@ -21,39 +21,15 @@ RAW_PRODUCTS_PATH = PROJECT_ROOT.parent / "final_products.json"
 
 # Processed data paths
 PROCESSED_PRODUCTS_PATH = DATA_DIR / "products" / "processed_products.json"
-PERSONAS_PATH = DATA_DIR / "personas" / "personas_kadence_enriched.json"
+PERSONAS_PATH = DATA_DIR / "personas" / "personas.json"
 BRAND_TONES_PATH = DATA_DIR / "brand_tones" / "brand_tones.json"
 CRM_EXAMPLES_PATH = DATA_DIR / "crm_examples" / "crm_examples.json"
 
 # Vector DB paths
 CHROMA_PERSIST_DIR = RAG_DIR / "chroma_db"
 
-# OpenAI settings - support both local .env and Streamlit Cloud secrets
-def get_openai_api_key():
-    """Get OpenAI API key from environment or Streamlit secrets"""
-    # First try environment variable
-    api_key = os.getenv("OPENAI_API_KEY", "")
-    if api_key:
-        return api_key
-
-    # Try Streamlit secrets (for Streamlit Cloud deployment)
-    try:
-        import streamlit as st
-        if hasattr(st, 'secrets'):
-            # Try [openai] section format
-            if 'openai' in st.secrets:
-                return st.secrets["openai"]["api_key"]
-            # Try direct OPENAI_API_KEY format
-            if 'OPENAI_API_KEY' in st.secrets:
-                return st.secrets["OPENAI_API_KEY"]
-    except Exception:
-        pass
-
-    return ""
-
-# Note: This is evaluated at import time. For Streamlit Cloud,
-# the key may need to be fetched at runtime in some modules.
-OPENAI_API_KEY = get_openai_api_key()
+# OpenAI settings
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 EMBEDDING_MODEL = "text-embedding-3-small"
 LLM_MODEL = "gpt-4o-mini"
 
