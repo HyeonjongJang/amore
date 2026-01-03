@@ -21,7 +21,7 @@ RAW_PRODUCTS_PATH = PROJECT_ROOT.parent / "final_products.json"
 
 # Processed data paths
 PROCESSED_PRODUCTS_PATH = DATA_DIR / "products" / "processed_products.json"
-PERSONAS_PATH = DATA_DIR / "personas" / "personas.json"
+PERSONAS_PATH = DATA_DIR / "personas" / "personas_kadence.json"
 BRAND_TONES_PATH = DATA_DIR / "brand_tones" / "brand_tones.json"
 CRM_EXAMPLES_PATH = DATA_DIR / "crm_examples" / "crm_examples.json"
 
