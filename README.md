@@ -29,6 +29,7 @@
 ## 2. System Architecture
 
 ### 2.1 전체 아키텍처
+<img width="1006" height="854" alt="image" src="https://github.com/user-attachments/assets/f52c2a20-6b3f-4ce2-9b5c-af139fa89a33" />
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────┐
@@ -138,6 +139,7 @@
 | **QualityCheckerAgent** | 품질 검증 | 생성된 메시지, 페르소나, 브랜드 | 품질 점수, 성과 예측, 개선 제안 |
 
 ### 3.2 RAG (Retrieval-Augmented Generation) 파이프라인
+<img width="1010" height="432" alt="image" src="https://github.com/user-attachments/assets/1610ad27-d2ee-4caa-a884-cb7a1dddaaeb" />
 
 ```
 [Product Data] ──→ [Preprocessing] ──→ [Embedding] ──→ [ChromaDB]
@@ -309,6 +311,12 @@ print(result)
 ---
 
 ## 7. Output Format
+<img width="1040" height="493" alt="image" src="https://github.com/user-attachments/assets/d47e3f5a-c818-4ae1-9f0c-9c7e282ac481" />
+<img width="1040" height="489" alt="image" src="https://github.com/user-attachments/assets/6add604a-e57f-4590-88f6-1bbeadde768d" />
+<img width="1040" height="491" alt="image" src="https://github.com/user-attachments/assets/b188ba09-a5dd-410e-a9ab-916ebece46ff" />
+<img width="1034" height="221" alt="image" src="https://github.com/user-attachments/assets/d13b0186-5ffd-40e0-b455-12161ea438fd" />
+
+
 
 ### 7.1 전체 응답 구조
 
@@ -484,3 +492,4 @@ This project is developed for the Amorepacific AI Innovation Challenge.
 - **피부고민**: 트러블, 진정, 저자극
 - **라이프스타일**: 성분 분석 철저, 리뷰 꼼꼼히 확인
 - **구매트리거**: 성분 정보, 실사용 리뷰, 샘플 증정
+
